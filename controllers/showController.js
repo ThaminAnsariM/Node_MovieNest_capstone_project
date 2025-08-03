@@ -21,6 +21,7 @@ export const getNowPlayingMovies = async (req, res) => {
     res.json({ success: true, movies });
   } catch (error) {
     console.error("Error fetching now playing movies:", error.message);
+    console.error("Full error object:", error.response?.data || error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -8,14 +8,18 @@ const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk" },
   { event: "clerk/user.created" },
   async ({ event }) => {
+    console.log("🔔 Clerk user.created event received");
+
     const data = event.data;
     if (!data) {
-      console.error("No data received in user.created");
+      console.error("❌ No data received");
       return;
     }
 
     const { id, first_name, last_name, email_addresses, image_url } = data;
 
+
+    // Proceed with MongoDB user creation
     const userData = {
       _id: id,
       email: email_addresses?.[0]?.email_address || "",
@@ -23,9 +27,22 @@ const syncUserCreation = inngest.createFunction(
       image: image_url,
     };
 
+    try {
+      await clerkClient.users.updateUser(id, {
+        privateMetadata: {
+          role: "admin"
+        },
+      });
+      console.log("✅ Metadata updated for user:", id);
+    } catch (error) {
+      console.error("❌ Failed to update metadata:", error.message);
+    }
+
     await User.create(userData);
   }
 );
+
+
 
 // Delete user
 const syncUserDeletion = inngest.createFunction(

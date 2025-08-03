@@ -1,6 +1,6 @@
 import Booking from "../models/booking.js";
 import Show from "../models/Show.js";
-import strip from "stripe"
+import Stripe from "stripe"
 // to fectch seat availablety
 
 const checkSeatsAvailability = async (showId, selectedSeats) => {
@@ -21,6 +21,7 @@ export const createBooking = async (req, res) => {
     const { userId } = req.auth();
     const { showId, selectedSeats } = req.body;
     const { origin } = req.headers;
+
     // Check if the seat is available for the selected show
     const isAvailable = await checkSeatsAvailability(showId, selectedSeats);
     if (!isAvailable) {
@@ -48,13 +49,13 @@ export const createBooking = async (req, res) => {
     await showData.save();
 
     // Stripe Gateway Initialize
-    const stripeInstance = new strip(process.env.STRIPE_SECRET_KEY)
+    const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY)
 
     // creating line items for strip
 
     const line_items = [{
       price_data:{
-        currency: 'usd',
+        currency: 'inr',
         product_data:{
           name: showData.movie.title
         },
@@ -76,6 +77,7 @@ export const createBooking = async (req, res) => {
     booking.paymentLink = session.url
     await booking.save()
 
+    console.log('session',session);
     res.status(200).json({success: true,url:session.url})
 
   } catch (error) {

@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors';
-import 'dotenv/config';
+import dotenv from "dotenv"
+dotenv.config();
 import connectDB from './configs/db.js';
 import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express";
@@ -16,7 +17,7 @@ const port = 3000;
 await connectDB();
 
 // Stripe webhooks route
-app.use('/api/stripe', express.raw({type: 'application/json'}),stripeWebhooks)
+app.use("/api/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
 
 // middleware
 
