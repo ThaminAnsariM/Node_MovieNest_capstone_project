@@ -36,3 +36,5 @@ app.use('/api/user',userRouter)
 app.use("/api/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
 
 app.listen(port, ()=> console.log(`Server listening at http://localhost:${port}`))
+
+

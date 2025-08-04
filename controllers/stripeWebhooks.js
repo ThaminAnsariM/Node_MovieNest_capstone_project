@@ -1,14 +1,12 @@
 import Stripe from "stripe";
 import Booking from "../models/booking.js";
-import dotenv from "dotenv";
 
-// Ensure dotenv is configured
-dotenv.config();
+console.log('key ',process.env.STRIPE_WEBHOOK_SECRET);
 
 // Create a middleware function that handles the raw body
 export const stripeWebhooks = async (request, response) => {
   console.log("⚡ Webhook request received");
-  
+ 
   // Check for environment variables
   if (!process.env.STRIPE_SECRET_KEY) {
     console.error("❌ Missing STRIPE_SECRET_KEY environment variable");
@@ -22,6 +20,7 @@ export const stripeWebhooks = async (request, response) => {
   
   const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
   const sig = request.headers["stripe-signature"];
+  const Key = process.env.STRIPE_WEBHOOK_SECRET
   
   if (!sig) {
     console.error("❌ Missing Stripe-Signature header");
@@ -37,7 +36,7 @@ export const stripeWebhooks = async (request, response) => {
     event = stripeInstance.webhooks.constructEvent(
       request.body,
       sig,
-      whsec_EQgPvQpzMUUYgcJUIYnunJpDaZeJBBUu
+      Key
     );
     console.log("✅ Webhook signature verified successfully");
   } catch (error) {

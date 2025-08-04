@@ -3,6 +3,8 @@ import Show from "../models/Show.js";
 import Stripe from "stripe"
 // to fectch seat availablety
 
+
+
 const checkSeatsAvailability = async (showId, selectedSeats) => {
   try {
     const showData = await Show.findById(showId);
