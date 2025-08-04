@@ -11,6 +11,7 @@ import bookingRouter from './router/bookingRouts.js';
 import adminRouter from './router/adminRouts.js';
 import userRouter from './router/userRoutes.js';
 import { stripeWebhooks } from './controllers/stripeWebhooks.js';
+import bodyParser from "body-parser";
 
 const app = express();
 const port = 3000;
@@ -19,6 +20,14 @@ await connectDB();
 // Use middleware that should apply to all routes EXCEPT webhooks
 app.use(cors())
 app.use(clerkMiddleware())
+
+// Stripe webhook route - with raw body parser specifically for this route
+// Change to app.post instead of app.use for a more specific route handler
+app.post(
+  "/api/stripe",
+  bodyParser.raw({ type: "application/json" }),
+  stripeWebhooks
+);
 
 // Standard JSON parsing for normal routes (but NOT for webhook route)
 app.use(express.json());
@@ -33,7 +42,11 @@ app.use('/api/user',userRouter)
 
 // Stripe webhook route - with raw body parser specifically for this route
 // Change to app.post instead of app.use for a more specific route handler
-app.use("/api/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
+app.post(
+  "/api/stripe",
+  bodyParser.raw({ type: "application/json" }),
+  stripeWebhooks
+);
 
 app.listen(port, ()=> console.log(`Server listening at http://localhost:${port}`))
 
