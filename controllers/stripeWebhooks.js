@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import Booking from "../models/booking.js";
+import { inngest } from "../inngest/index.js";
 
 
 
@@ -101,6 +102,11 @@ export const stripeWebhooks = async (request, response) => {
     console.error("❌ Error retrieving session data:", retrieveError);
   }
 
+  //Send Confirmation Email
+  await inngest.send({
+    name: "app/show.booked",
+    data: {bookingId}
+  })
   break;
 }
 

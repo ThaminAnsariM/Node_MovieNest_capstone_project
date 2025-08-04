@@ -20,7 +20,6 @@ const syncUserCreation = inngest.createFunction(
 
     const { id, first_name, last_name, email_addresses, image_url } = data;
 
-
     // Proceed with MongoDB user creation
     const userData = {
       _id: id,
@@ -32,7 +31,7 @@ const syncUserCreation = inngest.createFunction(
     try {
       await clerkClient.users.updateUser(id, {
         privateMetadata: {
-          role: "admin"
+          role: "admin",
         },
       });
       console.log("✅ Metadata updated for user:", id);
@@ -43,8 +42,6 @@ const syncUserCreation = inngest.createFunction(
     await User.create(userData);
   }
 );
-
-
 
 // Delete user
 const syncUserDeletion = inngest.createFunction(
@@ -86,13 +83,44 @@ const syncUserUpdate = inngest.createFunction(
   }
 );
 
-// reserve seats for 10 min 
+const sendBookingConfirmationEmail = inngest.createFunction(
+  { id: "send-booking-confirmation-email" },
+  { event: "app/show.booked" },
+  async ({ event, step }) => {
+    const { bookingId } = event.data;
 
+    const booking = await Booking.findById(bookingId)
+      .populate({
+        path: "show",
+        populate: { path: "movie", model: "Movie" },
+      })
+      .populate("user");
 
+    await sendEmail({
+      to: booking.user.email,
+      subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
+      body: `
+  <div style="font-family: Arial, sans-serif; line-height: 1.5">
+    <h2>Hi ${booking.user.name},</h2>
+    <p>Your booking for 
+      <strong style="color: #F84565;">"${
+        booking.show.movie.title
+      }"</strong> is confirmed.
+    </p>
+    <p>
+      <strong>Date:</strong> ${new Date(
+        booking.show.showDateTime
+      ).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" })}<br/>
+      <strong>Time:</strong> ${new Date(
+        booking.show.showDateTime
+      ).toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata" })}
+    </p>
+    <p>Enjoy the show!</p>
+    <p>Thanks for booking with us!<br/>– MovieNest Team</p>
+  </div>
+`,
+    });
+  }
+);
 
-
-export const functions = [
-  syncUserCreation,
-  syncUserDeletion,
-  syncUserUpdate,
-];
+export const functions = [syncUserCreation, syncUserDeletion, syncUserUpdate,sendBookingConfirmationEmail,];
