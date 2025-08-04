@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import Booking from "../models/booking.js";
 
-console.log('key ',process.env.STRIPE_WEBHOOK_SECRET);
+
 
 // Create a middleware function that handles the raw body
 export const stripeWebhooks = async (request, response) => {

@@ -16,16 +16,18 @@ export const getNowPlayingMovies = async (req, res) => {
         },
       }
     );
-
     const movies = data.results;
     res.json({ success: true, movies });
   } catch (error) {
     console.error("Error fetching now playing movies:", error.message);
-    console.error("Full error object:", error.response?.data || error);
-    res.status(500).json({ success: false, message: error.message });
+    if (error.response) {
+      console.error("TMDB response data:", error.response.data);
+      res.status(error.response.status).json({ success: false, message: error.response.data.status_message || error.message });
+    } else {
+      res.status(500).json({ success: false, message: error.message });
+    }
   }
 };
-
 // add new movie to db
 
 export const addShow = async (req, res) => {
