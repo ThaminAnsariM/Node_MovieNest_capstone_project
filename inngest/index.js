@@ -2,6 +2,7 @@ import { Inngest } from "inngest";
 import User from "../models/User.js";
 import Booking from "../models/booking.js";
 import Show from "../models/Show.js";
+import sendEmail from "../configs/Nodemailer.js";
 
 export const inngest = new Inngest({ id: "Movie-ticket-booking" });
 
