@@ -86,7 +86,7 @@ const syncUserUpdate = inngest.createFunction(
 );
 
 const sendBookingConfirmationEmail = inngest.createFunction(
-  { id: "send-booking-confirmation -email" },
+  { id: "send-booking-confirmation-email" },
   { event: "app/show.booked" },
   async ({ event, step }) => {
     const { bookingId } = event.data;
