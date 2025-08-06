@@ -2,34 +2,40 @@ import Stripe from "stripe";
 import Booking from "../models/booking.js";
 import { inngest } from "../inngest/index.js";
 
-
-
 // Create a middleware function that handles the raw body
 export const stripeWebhooks = async (request, response) => {
   console.log("⚡ Webhook request received");
- 
+
   // Check for environment variables
   if (!process.env.STRIPE_SECRET_KEY) {
     console.error("❌ Missing STRIPE_SECRET_KEY environment variable");
-    return response.status(500).send("Server configuration error: Missing Stripe secret key");
-  }
-  
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
-    console.error("❌ Missing STRIPE_WEBHOOK_SECRET environment variable");
-    return response.status(500).send("Server configuration error: Missing webhook secret");
-  }
-  
-  const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const sig = request.headers["stripe-signature"];
-  
-  
-  if (!sig) {
-    console.error("❌ Missing Stripe-Signature header");
-    return response.status(400).send("Webhook Error: No Stripe signature found");
+    return response
+      .status(500)
+      .send("Server configuration error: Missing Stripe secret key");
   }
 
-  console.log("🔍 Processing webhook with signature:", sig.substring(0, 15) + "...");
-  
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error("❌ Missing STRIPE_WEBHOOK_SECRET environment variable");
+    return response
+      .status(500)
+      .send("Server configuration error: Missing webhook secret");
+  }
+
+  const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const sig = request.headers["stripe-signature"];
+
+  if (!sig) {
+    console.error("❌ Missing Stripe-Signature header");
+    return response
+      .status(400)
+      .send("Webhook Error: No Stripe signature found");
+  }
+
+  console.log(
+    "🔍 Processing webhook with signature:",
+    sig.substring(0, 15) + "..."
+  );
+
   let event;
 
   try {
@@ -51,64 +57,64 @@ export const stripeWebhooks = async (request, response) => {
   try {
     // Handle different event types
     switch (event.type) {
-   
-      
-  case "payment_intent.succeeded": {
-  const paymentIntent = event.data.object;
-  console.log("💳 Payment intent succeeded:", paymentIntent.id);
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object;
+        console.log("💳 Payment intent succeeded:", paymentIntent.id);
 
-  try {
-    // Fetch the session associated with this payment intent
-    const sessions = await stripeInstance.checkout.sessions.list({
-      payment_intent: paymentIntent.id,
-      limit: 1, // Narrow the results
-    });
+        try {
+          // Fetch the session associated with this payment intent
+          const sessions = await stripeInstance.checkout.sessions.list({
+            payment_intent: paymentIntent.id,
+            limit: 1, // Narrow the results
+          });
 
-    if (sessions.data.length === 0) {
-      console.warn("⚠️ No Checkout Session found for PaymentIntent:", paymentIntent.id);
-      break;
-    }
+          if (sessions.data.length === 0) {
+            console.warn(
+              "⚠️ No Checkout Session found for PaymentIntent:",
+              paymentIntent.id
+            );
+            break;
+          }
 
-    const session = sessions.data[0];
+          const session = sessions.data[0];
 
-    console.log("🔎 Retrieved session:", session.id);
-    console.log("🧾 Metadata:", session.metadata);
+          console.log("🔎 Retrieved session:", session.id);
+          console.log("🧾 Metadata:", session.metadata);
 
-    const { bookingId } = session.metadata || {};
+          const { bookingId } = session.metadata || {};
 
-    if (!bookingId) {
-      console.error("❌ No bookingId found in session metadata");
-      break;
-    }
+          if (!bookingId) {
+            console.error("❌ No bookingId found in session metadata");
+            break;
+          }
 
-    console.log("🎟️ Processing payment for booking:", bookingId);
+          console.log("🎟️ Processing payment for booking:", bookingId);
 
-    const updatedBooking = await Booking.findByIdAndUpdate(
-      bookingId,
-      {
-        isPaid: true,
-        paymentLink: "",
-      },
-      { new: true }
-    );
+          const updatedBooking = await Booking.findByIdAndUpdate(
+            bookingId,
+            {
+              isPaid: true,
+              paymentLink: "",
+            },
+            { new: true }
+          );
+          //Send Confirmation Email
+          await inngest.send({
+            name: "app/show.booked",
+            data: { bookingId },
+          });
 
-    if (!updatedBooking) {
-      console.error(`❌ Booking not found with ID: ${bookingId}`);
-    } else {
-      console.log("✅ Booking updated successfully:", updatedBooking._id);
-    }
+          if (!updatedBooking) {
+            console.error(`❌ Booking not found with ID: ${bookingId}`);
+          } else {
+            console.log("✅ Booking updated successfully:", updatedBooking._id);
+          }
+        } catch (retrieveError) {
+          console.error("❌ Error retrieving session data:", retrieveError);
+        }
 
-  } catch (retrieveError) {
-    console.error("❌ Error retrieving session data:", retrieveError);
-  }
-
-  //Send Confirmation Email
-  await inngest.send({
-    name: "app/show.booked",
-    data: {bookingId}
-  })
-  break;
-}
+        break;
+      }
 
       default:
         console.log("ℹ️ Unhandled event type:", event.type);

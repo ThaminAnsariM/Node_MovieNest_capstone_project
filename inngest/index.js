@@ -4,6 +4,7 @@ import Booking from "../models/booking.js";
 import Show from "../models/Show.js";
 import sendEmail from "../configs/Nodemailer.js";
 
+
 export const inngest = new Inngest({ id: "Movie-ticket-booking" });
 
 // Create user
@@ -85,10 +86,11 @@ const syncUserUpdate = inngest.createFunction(
 );
 
 const sendBookingConfirmationEmail = inngest.createFunction(
-  { id: "send-booking-confirmation-email" },
+  { id: "send-booking-confirmation -email" },
   { event: "app/show.booked" },
   async ({ event, step }) => {
     const { bookingId } = event.data;
+
 
     const booking = await Booking.findById(bookingId)
       .populate({
@@ -97,31 +99,41 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       })
       .populate("user");
 
-    await sendEmail({
-      to: booking.user.email,
-      subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
-      body: `
-  <div style="font-family: Arial, sans-serif; line-height: 1.5">
-    <h2>Hi ${booking.user.name},</h2>
-    <p>Your booking for 
-      <strong style="color: #F84565;">"${
-        booking.show.movie.title
-      }"</strong> is confirmed.
-    </p>
-    <p>
-      <strong>Date:</strong> ${new Date(
-        booking.show.showDateTime
-      ).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" })}<br/>
-      <strong>Time:</strong> ${new Date(
-        booking.show.showDateTime
-      ).toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata" })}
-    </p>
-    <p>Enjoy the show!</p>
-    <p>Thanks for booking with us!<br/>– MovieNest Team</p>
-  </div>
-`,
-    });
+     await sendEmail({
+  to: booking.user.email,
+  subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
+  body: `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #2c3e50;">🎉 Booking Confirmed!</h2>
+      <p>Hi ${booking.user.name},</p>
+      
+      <p>Thank you for your payment. Your booking for <strong>${booking.show.movie.title}</strong> has been successfully confirmed.</p>
+      
+      <h3> Booking Details:</h3>
+      <ul>
+        <li><strong>Movie:</strong> ${booking.show.movie.title}</li>
+        <li><strong>Date:</strong> ${booking.show.date}</li>
+        <li><strong>Time:</strong> ${booking.show.time}</li>
+        <li><strong>Theatre:</strong> ${booking.show.theatre.name}</li>
+        <li><strong>Seats:</strong> ${booking.seats.join(', ')}</li>
+        <li><strong>Total Paid:</strong> ₹${booking.totalAmount}</li>
+      </ul>
+
+      <p>If you have any questions or need support, feel free to reach out.</p>
+
+      <p style="margin-top: 20px;">Enjoy your show! </p>
+
+      <p>— Team MovieNest</p>
+    </div>
+  `
+});
+
   }
 );
 
-export const functions = [syncUserCreation, syncUserDeletion, syncUserUpdate,sendBookingConfirmationEmail,];
+export const functions = [
+  syncUserCreation,
+  syncUserDeletion,
+  syncUserUpdate,
+  sendBookingConfirmationEmail,
+];
