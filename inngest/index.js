@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import Booking from "../models/booking.js";
 import Show from "../models/Show.js";
 import sendEmail from "../configs/Nodemailer.js";
-
+import { clerkMiddleware } from "@clerk/express";
 
 export const inngest = new Inngest({ id: "Movie-ticket-booking" });
 
@@ -22,14 +22,7 @@ const syncUserCreation = inngest.createFunction(
 
     const { id, first_name, last_name, email_addresses, image_url } = data;
 
-    // Proceed with MongoDB user creation
-    const userData = {
-      _id: id,
-      email: email_addresses?.[0]?.email_address || "",
-      name: `${first_name} ${last_name}`,
-      image: image_url,
-    };
-
+    // Set private metadata for role: "admin"
     try {
       await clerkClient.users.updateUser(id, {
         privateMetadata: {
@@ -40,6 +33,14 @@ const syncUserCreation = inngest.createFunction(
     } catch (error) {
       console.error("❌ Failed to update metadata:", error.message);
     }
+
+    // Proceed with MongoDB user creation
+    const userData = {
+      _id: id,
+      email: email_addresses?.[0]?.email_address || "",
+      name: `${first_name} ${last_name}`,
+      image: image_url,
+    };
 
     await User.create(userData);
   }
@@ -91,7 +92,6 @@ const sendBookingConfirmationEmail = inngest.createFunction(
   async ({ event, step }) => {
     const { bookingId } = event.data;
 
-
     const booking = await Booking.findById(bookingId)
       .populate({
         path: "show",
@@ -99,30 +99,29 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       })
       .populate("user");
 
-    await sendEmail({
-  to: booking.user.email,
-  subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
-  body: `
-    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-      <h2 style="color: #2c3e50;">🎉 Booking Confirmed!</h2>
-      <p>Hi ${booking.user.name},</p>
-      <p>Thank you for your payment. Your booking for <strong>${booking.show.movie.title}</strong> has been successfully confirmed.</p>
-      <h3> Booking Details:</h3>
-      <ul>
-        <li><strong>Movie:</strong> ${booking.show.movie.title}</li>
-        <li><strong>Date:</strong> ${booking.show.date}</li>
-        <li><strong>Time:</strong> ${booking.show.time}</li>
-        <li><strong>Theatre:</strong> ${booking.show.theatre.name}</li>
-        <li><strong>Seats:</strong> ${booking.bookedSeats.join(', ')}</li>
-        <li><strong>Total Paid:</strong> ₹${booking.amount}</li>
-      </ul>
-      <p>If you have any questions or need support, feel free to reach out.</p>
-      <p style="margin-top: 20px;">Enjoy your show! </p>
-      <p>— Team MovieNest</p>
-    </div>
-  `
-});
+    // Null check BEFORE sending email
+    if (!booking || !booking.user || !booking.show || !booking.show.movie) {
+      throw new Error(
+        "Booking, user, show, or movie not found for confirmation email."
+      );
+    }
 
+    await sendEmail({
+      to: booking.user.email,
+      subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
+      body: ` <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+              <h2>Hi ${booking?.user?.name || "Guest"},</h2>
+              <p>Your booking for 
+              <strong style="color: #F84565;">"${ booking?.show?.movie?.title || "Movie"}"</strong> 
+              is confirmed.</p>
+              <p>
+              <strong>Date:</strong> ${new Date(booking?.show?.showDateTime).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" })}<br/>
+              <strong>Time:</strong> ${new Date(booking?.show?.showDateTime).toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata" })}
+              </p>
+              <p>Enjoy the show!</p>
+              <p>Thanks for booking with us!<br/>– MovieNest Team</p>
+              </div>`,
+    });
   }
 );
 
