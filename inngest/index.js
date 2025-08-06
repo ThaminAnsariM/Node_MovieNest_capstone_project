@@ -99,30 +99,25 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       })
       .populate("user");
 
-     await sendEmail({
+    await sendEmail({
   to: booking.user.email,
   subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
   body: `
     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
       <h2 style="color: #2c3e50;">🎉 Booking Confirmed!</h2>
       <p>Hi ${booking.user.name},</p>
-      
       <p>Thank you for your payment. Your booking for <strong>${booking.show.movie.title}</strong> has been successfully confirmed.</p>
-      
       <h3> Booking Details:</h3>
       <ul>
         <li><strong>Movie:</strong> ${booking.show.movie.title}</li>
         <li><strong>Date:</strong> ${booking.show.date}</li>
         <li><strong>Time:</strong> ${booking.show.time}</li>
         <li><strong>Theatre:</strong> ${booking.show.theatre.name}</li>
-        <li><strong>Seats:</strong> ${booking.seats.join(', ')}</li>
-        <li><strong>Total Paid:</strong> ₹${booking.totalAmount}</li>
+        <li><strong>Seats:</strong> ${booking.bookedSeats.join(', ')}</li>
+        <li><strong>Total Paid:</strong> ₹${booking.amount}</li>
       </ul>
-
       <p>If you have any questions or need support, feel free to reach out.</p>
-
       <p style="margin-top: 20px;">Enjoy your show! </p>
-
       <p>— Team MovieNest</p>
     </div>
   `
