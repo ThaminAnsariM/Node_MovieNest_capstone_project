@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import Booking from "../models/booking.js";
 import Show from "../models/Show.js";
 import sendEmail from "../configs/Nodemailer.js";
-import { clerkMiddleware } from "@clerk/express";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 
 export const inngest = new Inngest({ id: "Movie-ticket-booking" });
 
@@ -99,12 +99,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       })
       .populate("user");
 
-    // Null check BEFORE sending email
-    if (!booking || !booking.user || !booking.show || !booking.show.movie) {
-      throw new Error(
-        "Booking, user, show, or movie not found for confirmation email."
-      );
-    }
+    
 
     await sendEmail({
       to: booking.user.email,
