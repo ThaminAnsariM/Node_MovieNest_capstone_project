@@ -114,7 +114,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
   <!-- Movie Poster -->
   <div style="text-align: center; margin: 20px 0;">
     <img src="https://image.tmdb.org/t/p/original${
-      booking?.show?.movie?.poster || "https://via.placeholder.com/300x450"
+      booking?.show?.movie?.poster_path || "https://via.placeholder.com/300x450"
     }" alt="Movie Poster" style="max-width: 100%; border-radius: 10px;" />
   </div>
 
