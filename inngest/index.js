@@ -4,7 +4,7 @@ import Booking from "../models/booking.js";
 import Show from "../models/Show.js";
 import sendEmail from "../configs/Nodemailer.js";
 import { clerkClient } from "@clerk/clerk-sdk-node";
-import QRCode from "qrcode";
+
 export const inngest = new Inngest({ id: "Movie-ticket-booking" });
 
 // Create user
@@ -86,14 +86,12 @@ const syncUserUpdate = inngest.createFunction(
   }
 );
 
-
+import QRCode from "qrcode";
 
 const sendBookingConfirmationEmail = inngest.createFunction(
   { id: "send-booking-confirmation-email" },
   { event: "app/show.booked" },
   async ({ event }) => {
-    console.log("📩 Sending booking confirmation email for bookingId:", event.data.bookingId);
-
     const { bookingId } = event.data;
 
     const booking = await Booking.findById(bookingId)
@@ -103,13 +101,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       })
       .populate("user");
 
-    console.log("✅ Booking fetched:", {
-      user: booking?.user?.email,
-      movie: booking?.show?.movie?.title,
-      seats: booking?.bookedSeats,
-    });
-
-    // Generate QR code data
+    // Generate QR code dynamically from booking details
     const qrData = JSON.stringify({
       bookingId: booking._id,
       userId: booking.user._id,
@@ -119,28 +111,26 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       date: booking.show.showDateTime,
     });
 
-    console.log("ℹ️ QR Data to encode:", qrData);
+    const qrCodeImage = await QRCode.toDataURL(qrData);
 
-    // Create QR as buffer for attachment
-    const qrCodeBuffer = await QRCode.toBuffer(qrData);
-    console.log("📷 QR Code buffer generated (length):", qrCodeBuffer.length);
-
-    const posterUrl = `https://image.tmdb.org/t/p/original${booking?.show?.movie?.poster_path || ""}`;
-    console.log("🎞 Poster URL:", posterUrl);
-
-    const emailHtml = `
+    await sendEmail({
+      to: booking.user.email,
+      subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
+      body: `
 <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
-  <h2 style="color: #19f412ff;">🎟️ Booking Confirmed!</h2>
+  <h2 style="color: #45f86fff;">🎟️ Booking Confirmed!</h2>
 
   <p>Hi <strong>${booking?.user?.name || "Guest"}</strong>,</p>
 
-  <p>Your ticket for <strong style="color: #19f412ff;">"${
+  <p>Your ticket for <strong style="color: #F84565;">"${
     booking?.show?.movie?.title || "Movie"
   }"</strong> is confirmed. Please find your booking details below:</p>
 
   <!-- Movie Poster -->
   <div style="text-align: center; margin: 20px 0;">
-    <img src="${posterUrl}" alt="Movie Poster" style="max-width: 100%; border-radius: 10px;" />
+    <img src="https://image.tmdb.org/t/p/original${
+      booking?.show?.movie?.poster_path || ""
+    }" alt="Movie Poster" style="max-width: 100%; border-radius: 10px;" />
   </div>
 
   <!-- Show Details -->
@@ -158,35 +148,17 @@ const sendBookingConfirmationEmail = inngest.createFunction(
   <!-- QR Code -->
   <div style="text-align: center; margin: 20px 0;">
     <p style="margin-bottom: 8px;">Scan at the entrance</p>
-    <img src="cid:qrCodeImage" alt="QR Code" style="width: 150px; height: 150px;" />
+    <img src="${qrCodeImage}" alt="QR Code" style="width: 150px; height: 150px;" />
   </div>
 
   <p>Enjoy your movie experience! 🍿</p>
 
   <p style="margin-top: 20px;">Thanks for booking with <strong>MovieNest</strong>!<br />– The MovieNest Team</p>
 </div>
-    `;
-
-    // Send email with QR code attached as CID
-    await transporter.sendMail({
-      from: process.env.SENDER_EMAIL,
-      to: booking.user.email,
-      subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
-      html: emailHtml,
-      attachments: [
-        {
-          filename: "qrcode.png",
-          content: qrCodeBuffer,
-          cid: "qrCodeImage", // same as in HTML
-        },
-      ],
+      `,
     });
-
-    console.log("✅ Booking confirmation email sent to:", booking.user.email);
   }
 );
-
-
 
 
 export const functions = [
