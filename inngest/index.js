@@ -99,23 +99,50 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       })
       .populate("user");
 
-    
-
     await sendEmail({
       to: booking.user.email,
       subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
-      body: ` <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-              <h2>Hi ${booking?.user?.name || "Guest"},</h2>
-              <p>Your booking for 
-              <strong style="color: #F84565;">"${ booking?.show?.movie?.title || "Movie"}"</strong> 
-              is confirmed.</p>
-              <p>
-              <strong>Date:</strong> ${new Date(booking?.show?.showDateTime).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" })}<br/>
-              <strong>Time:</strong> ${new Date(booking?.show?.showDateTime).toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata" })}
-              </p>
-              <p>Enjoy the show!</p>
-              <p>Thanks for booking with us!<br/>– MovieNest Team</p>
-              </div>`,
+      body: ` <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+  <h2 style="color: #F84565;">🎟️ Booking Confirmed!</h2>
+
+  <p>Hi <strong>${booking?.user?.name || "Guest"}</strong>,</p>
+
+  <p>Your ticket for <strong style="color: #F84565;">"${
+    booking?.show?.movie?.title || "Movie"
+  }"</strong> is confirmed. Please find your booking details below:</p>
+
+  <!-- Movie Poster -->
+  <div style="text-align: center; margin: 20px 0;">
+    <img src="https://image.tmdb.org/t/p/original${
+      booking?.show?.movie?.poster || "https://via.placeholder.com/300x450"
+    }" alt="Movie Poster" style="max-width: 100%; border-radius: 10px;" />
+  </div>
+
+  <!-- Show Details -->
+  <div style="background-color: #f9f9f9; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px;">
+    <p><strong>🎬 Movie:</strong> ${booking?.show?.movie?.title || "Movie"}</p>
+    <p><strong>📅 Date:</strong> ${new Date(
+      booking?.show?.showDateTime
+    ).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" })}</p>
+    <p><strong>⏰ Time:</strong> ${new Date(
+      booking?.show?.showDateTime
+    ).toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata" })}</p>
+    <p><strong>💺 Seat(s):</strong> ${booking?.bookedSeats?.join(", ") || "N/A"}</p>
+  </div>
+
+  <!-- QR Code -->
+  <div style="text-align: center; margin: 20px 0;">
+    <p style="margin-bottom: 8px;">Scan at the entrance</p>
+    <img src="${
+      booking?.qrCodeUrl || "https://via.placeholder.com/150"
+    }" alt="QR Code" style="width: 150px; height: 150px;" />
+  </div>
+
+  <p>Enjoy your movie experience! 🍿</p>
+
+  <p style="margin-top: 20px;">Thanks for booking with <strong>MovieNest</strong>!<br />– The MovieNest Team</p>
+</div>
+ `,
     });
   }
 );
