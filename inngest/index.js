@@ -92,8 +92,9 @@ const sendBookingConfirmationEmail = inngest.createFunction(
   { id: "send-booking-confirmation-email" },
   { event: "app/show.booked" },
   async ({ event }) => {
+    console.log("📩 Sending booking confirmation email for bookingId:", event.data.bookingId);
+
     const { bookingId } = event.data;
-    console.log("📩 Sending booking confirmation email for bookingId:", bookingId);
 
     const booking = await Booking.findById(bookingId)
       .populate({
@@ -108,7 +109,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
       seats: booking?.bookedSeats,
     });
 
-    // Generate QR code
+    // Generate QR code data
     const qrData = JSON.stringify({
       bookingId: booking._id,
       userId: booking.user._id,
@@ -120,8 +121,9 @@ const sendBookingConfirmationEmail = inngest.createFunction(
 
     console.log("ℹ️ QR Data to encode:", qrData);
 
-    const qrCodeImage = await QRCode.toDataURL(qrData);
-    console.log("📷 QR Code generated (first 100 chars):", qrCodeImage.substring(0, 100));
+    // Create QR as buffer for attachment
+    const qrCodeBuffer = await QRCode.toBuffer(qrData);
+    console.log("📷 QR Code buffer generated (length):", qrCodeBuffer.length);
 
     const posterUrl = `https://image.tmdb.org/t/p/original${booking?.show?.movie?.poster_path || ""}`;
     console.log("🎞 Poster URL:", posterUrl);
@@ -129,13 +131,19 @@ const sendBookingConfirmationEmail = inngest.createFunction(
     const emailHtml = `
 <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
   <h2 style="color: #19f412ff;">🎟️ Booking Confirmed!</h2>
+
   <p>Hi <strong>${booking?.user?.name || "Guest"}</strong>,</p>
+
   <p>Your ticket for <strong style="color: #19f412ff;">"${
     booking?.show?.movie?.title || "Movie"
   }"</strong> is confirmed. Please find your booking details below:</p>
+
+  <!-- Movie Poster -->
   <div style="text-align: center; margin: 20px 0;">
     <img src="${posterUrl}" alt="Movie Poster" style="max-width: 100%; border-radius: 10px;" />
   </div>
+
+  <!-- Show Details -->
   <div style="background-color: #f9f9f9; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px;">
     <p><strong>🎬 Movie:</strong> ${booking?.show?.movie?.title || "Movie"}</p>
     <p><strong>📅 Date:</strong> ${new Date(
@@ -146,25 +154,38 @@ const sendBookingConfirmationEmail = inngest.createFunction(
     ).toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata" })}</p>
     <p><strong>💺 Seat(s):</strong> ${booking?.bookedSeats?.join(", ") || "N/A"}</p>
   </div>
+
+  <!-- QR Code -->
   <div style="text-align: center; margin: 20px 0;">
     <p style="margin-bottom: 8px;">Scan at the entrance</p>
-    <img src="${qrCodeImage}" alt="QR Code" style="width: 150px; height: 150px;" />
+    <img src="cid:qrCodeImage" alt="QR Code" style="width: 150px; height: 150px;" />
   </div>
+
   <p>Enjoy your movie experience! 🍿</p>
+
   <p style="margin-top: 20px;">Thanks for booking with <strong>MovieNest</strong>!<br />– The MovieNest Team</p>
-</div>`;
+</div>
+    `;
 
-    console.log("✉️ Email HTML preview (first 200 chars):", emailHtml.substring(0, 200));
-
-    await sendEmail({
+    // Send email with QR code attached as CID
+    await transporter.sendMail({
+      from: process.env.SENDER_EMAIL,
       to: booking.user.email,
       subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
-      body: emailHtml,
+      html: emailHtml,
+      attachments: [
+        {
+          filename: "qrcode.png",
+          content: qrCodeBuffer,
+          cid: "qrCodeImage", // same as in HTML
+        },
+      ],
     });
 
     console.log("✅ Booking confirmation email sent to:", booking.user.email);
   }
 );
+
 
 
 
