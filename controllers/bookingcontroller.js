@@ -1,4 +1,4 @@
-import { inngest } from "../inngest/index.js"; 
+import { inngest } from "../inngest/index.js";
 import Booking from "../models/booking.js";
 import Show from "../models/Show.js";
 import Stripe from "stripe";
@@ -16,11 +16,10 @@ const checkSeatsAvailability = async (showId, selectedSeats) => {
   } catch (error) {
     console.log(error.message);
     return false;
-  }
-};
+  }};
 
 
-export const createBooking = async (req, res) => {
+  export const createBooking = async (req, res) => {
   try {
     const { userId } = req.auth();
     const { showId, selectedSeats } = req.body;
@@ -50,18 +49,6 @@ export const createBooking = async (req, res) => {
     showData.markModified("occupiedSeats");
     await showData.save();
 
-    const qrData = JSON.stringify({
-      bookingId: booking._id,
-      userId,
-      show: showData._id,
-      seats: selectedSeats,
-      movie: showData.movie.title,
-      date: showData.date,
-      time: showData.startTime,
-    });
-
-    booking.qrCode = await QRCode.toDataURL(qrData);
-
     const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
     const line_items = [
       {
@@ -84,9 +71,8 @@ export const createBooking = async (req, res) => {
     });
 
     booking.paymentLink = session.url;
-    await booking.save(); // ✅ Save with qrCode and paymentLink
+    await booking.save();
 
-    // 🔔 Trigger Inngest after save
     await inngest.send({
       name: "app/show.booked",
       data: { bookingId: booking._id.toString() },
@@ -98,6 +84,7 @@ export const createBooking = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 
 export const getOccupiedSeats = async (req, res) => {
