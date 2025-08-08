@@ -9,7 +9,7 @@ const bookingSchema = new mongoose.Schema(
     isPaid: { type: Boolean, default: false },
     paymentLink: { type: String },
     qrCode: { type: String },  
-    poster: { type: String },  
+    poster: { type: String }, 
   },
   { timestamps: true }
 );

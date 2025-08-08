@@ -134,7 +134,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
   <div style="text-align: center; margin: 20px 0;">
     <p style="margin-bottom: 8px;">Scan at the entrance</p>
     <img src="${
-      booking?.qrCodeUrl || "https://via.placeholder.com/150"
+      booking?.qrCode || "https://via.placeholder.com/150"
     }" alt="QR Code" style="width: 150px; height: 150px;" />
   </div>
 
