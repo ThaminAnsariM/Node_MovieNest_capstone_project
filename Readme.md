@@ -56,19 +56,45 @@ Create a `.env` file in the `server` directory with all required keys for MongoD
 
 ---
 
+
+
 ## API Endpoints
 
-- `POST /api/auth/*` - User authentication
-- `GET /api/show/now-playing` - Get now playing movies
-- `POST /api/booking` - Create a booking
-- `GET /api/booking/occupied-seats/:showId` - Get occupied seats for a show
-- `POST /api/stripe/webhook` - Stripe webhook endpoint
+{
+  "Admin Management": [
+    { "method": "GET", "endpoint": "/api/admin/is-admin", "description": "Check if the current user is an admin" },
+    { "method": "GET", "endpoint": "/api/admin/dashboard", "description": "Retrieve admin dashboard metrics" },
+    { "method": "GET", "endpoint": "/api/admin/all-shows", "description": "Get all shows" },
+    { "method": "GET", "endpoint": "/api/admin/all-bookings", "description": "Get all bookings in the system" }
+  ],
+  "Booking Management": [
+    { "method": "POST", "endpoint": "/api/booking/create", "description": "Create a new booking" },
+    { "method": "GET", "endpoint": "/api/booking/seats/:showId", "description": "Get occupied seats for a given show" }
+  ],
+  "Show Management": [
+    { "method": "GET", "endpoint": "/api/show/now-playing", "description": "Get now-playing movies (admin only)" },
+    { "method": "POST", "endpoint": "/api/show/add", "description": "Add a new show" },
+    { "method": "GET", "endpoint": "/api/show/all", "description": "Get all shows" },
+    { "method": "GET", "endpoint": "/api/show/:movieId", "description": "Get details for a specific movie show" }
+  ],
+  "User Management": [
+    { "method": "GET", "endpoint": "/api/user/bookings", "description": "Get all bookings for the logged-in user" },
+    { "method": "POST", "endpoint": "/api/user/update-favorite", "description": "Update the user’s favourite movies" },
+    { "method": "GET", "endpoint": "/api/user/favorites", "description": "Get the user’s favourite movies list" }
+  ],
+  "System & Webhooks": [
+    { "method": "GET", "endpoint": "/", "description": "Health check — returns 'server is Live!'" },
+    { "method": "POST", "endpoint": "/api/stripe", "description": "Stripe webhook endpoint" },
+    { "method": "ANY", "endpoint": "/api/inngest/*", "description": "Inngest event handler endpoints" }
+  ]
+}
+
 
 ---
 
 ## Webhooks
 
-- Stripe webhooks are handled at `/api/stripe/webhook`  
+- Stripe webhooks are handled at `/api/stripe`  
   Ensure you use `express.raw({ type: 'application/json' })` middleware for this route.
 
 ---
