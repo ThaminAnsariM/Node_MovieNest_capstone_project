@@ -56,6 +56,8 @@ Create a `.env` file in the `server` directory with all required keys for MongoD
 
 ---
 
+[
+
 ## API Endpoints
 Admin Management		
 Method	Endpoint	Description
@@ -89,7 +91,7 @@ POST	/api/stripe	Stripe webhook endpoint
 Any	/api/inngest/*	Inngest event handler endpoints
 		
 
-
+]
 
 ---
 
