@@ -58,11 +58,26 @@ Create a `.env` file in the `server` directory with all required keys for MongoD
 
 ## API Endpoints
 
-- `POST /api/auth/*` - User authentication
-- `GET /api/show/now-playing` - Get now playing movies
-- `POST /api/booking` - Create a booking
-- `GET /api/booking/occupied-seats/:showId` - Get occupied seats for a show
-- `POST /api/stripe/webhook` - Stripe webhook endpoint
+- `GET /api/admin/is-admin` - Check if the current user is an admin
+- `GET /api/admin/dashboard` - Retrieve admin dashboard metrics
+- `GET /api/admin/all-shows` - Get all shows
+- `GET /api/admin/all-bookings` - Get all bookings in the system
+
+- `POST /api/booking/create` - Create a new booking
+- `GET /api/booking/seats/:showId` - Get occupied seats for a show
+
+- `GET /api/show/now-playing` - Get now playing movies (admin only)
+- `POST /api/show/add` - Add a new show
+- `GET /api/show/all` - Get all shows
+- `GET /api/show/:movieId` - Get details for a specific movie show
+
+- `GET /api/user/bookings` - Get all bookings for the logged-in user
+- `POST /api/user/update-favorite` - Update the user’s favourite movies
+- `GET /api/user/favorites` - Get the user’s favourite movies list
+
+- `GET /` - Health check (server status)
+- `POST /api/stripe` - Stripe webhook endpoint
+- `ANY /api/inngest/*` - Inngest event handler endpoints
 
 ---
 
